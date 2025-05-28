@@ -43,11 +43,24 @@ jobs:
           script: |
             const mergeMethod = context.payload.pull_request.labels.some(label => label.name === 'don\'t squash') ? 'rebase' : 'squash';
             
+            // Get the PR details to check mergeable state
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            if (pr.data.mergeable_state === 'conflicting') {
+              core.setFailed('Cannot merge PR: Conflicts detected with release/dev branch');
+              return;
+            }
+
             await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number,
               merge_method: mergeMethod,
+              base: 'release/dev',
               author_name: context.payload.pull_request.user.login,
               author_email: context.payload.pull_request.user.email || `${context.payload.pull_request.user.login}@users.noreply.github.com`
             });
