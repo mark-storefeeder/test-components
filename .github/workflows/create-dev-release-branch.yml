@@ -5,7 +5,7 @@ on:
     types: [labeled]
 
 jobs:
-  create-dev-branch:
+  create-dev-release-branch:
     if: github.event.label.name == 'ready for dev testing'
     runs-on: ubuntu-latest
     steps:
@@ -35,3 +35,19 @@ jobs:
           git push origin release/dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge PR to release/dev branch
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const mergeMethod = context.payload.pull_request.labels.some(label => label.name === 'don\'t squash') ? 'rebase' : 'squash';
+            
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              merge_method: mergeMethod,
+              author_name: context.payload.pull_request.user.login,
+              author_email: context.payload.pull_request.user.email || `${context.payload.pull_request.user.login}@users.noreply.github.com`
+            });
