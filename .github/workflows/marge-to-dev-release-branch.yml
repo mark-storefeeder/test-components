@@ -96,8 +96,16 @@ jobs:
                 repo: context.repo.repo,
                 title: 'release/dev',
                 head: 'release/dev',
-                base: 'main',
-                labels: ['don\'t squash']
+                base: 'main'
+              })
+              .then(async (response) => {
+                // Add 'don't squash' label to the PR
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: response.data.number,
+                  labels: ['don\'t squash']
+                });
               });
             }
     
