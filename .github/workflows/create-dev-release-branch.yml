@@ -1,15 +1,12 @@
-name: Create Dev Branch
+name: Create DEV release branch
 
 on:
-  push:
-    branches:
-      - main
-#  pull_request:
-#    types: [labeled]
+  pull_request:
+    types: [labeled]
 
 jobs:
   create-dev-branch:
-#    if: github.event.label.name == 'ready for dev testing'
+    if: github.event.label.name == 'ready for dev testing'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -19,7 +16,7 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check if branch exists
+      - name: Check if release/dev branch exists
         id: check-branch
         run: |
           if git ls-remote --heads origin release/dev | grep -q "release/dev"; then
@@ -28,7 +25,7 @@ jobs:
             echo "branch_exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create dev branch
+      - name: Create release/dev branch
         if: steps.check-branch.outputs.branch_exists == 'false'
         run: |
           git config --global user.name 'GitHub Actions'
