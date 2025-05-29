@@ -82,7 +82,6 @@ jobs:
               --body '${{ inputs.branch_name }}' \
               --head '${{ inputs.branch_name }}' \
               --base main \
-              --label 'don\'t squash'
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
