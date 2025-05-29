@@ -33,9 +33,13 @@ jobs:
             # Create the new branch
             gh api repos/${{ github.repository }}/git/refs -f ref=refs/heads/${{ inputs.branch_name }} -f sha=$sha
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change base branch
         run: gh pr edit ${{ github.event.pull_request.number }} --base ${{ inputs.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge pull request
         run: |
@@ -44,6 +48,8 @@ jobs:
           else
             gh pr merge ${{ github.event.pull_request.number }} --squash
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create new pull request
         run: |
