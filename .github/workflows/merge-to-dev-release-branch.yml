@@ -6,7 +6,9 @@ on:
 
 jobs:
   merge-and-create-pull-request:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for dev testing')
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'ready for dev testing') &&
+      github.event.pull_request.state != 'closed'
     uses: ./.github/workflows/merge-and-create-pull-request.yml
     with:
       branch_name: 'release/dev'
