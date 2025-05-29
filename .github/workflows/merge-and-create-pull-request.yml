@@ -74,35 +74,15 @@ jobs:
             });
 
       - name: Create pull request
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Check if a pull request already exists
-            const existingPRs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: '${{ inputs.branch_name }}',
-              base: 'main',
-              state: 'open'
-            });
-
-            if (existingPRs.data.length === 0) {
-              await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: '${{ inputs.branch_name }}',
-                description: '${{ inputs.branch_name }}',
-                head: '${{ inputs.branch_name }}',
-                base: 'main'
-              })
-              .then(async (response) => {
-                // Add 'don't squash' label to the pull request
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: response.data.number,
-                  labels: ['don\'t squash']
-                });
-              });
-            }
+        run: |
+          # Check if a pull request already exists
+          if ! gh pr list --head '${{ inputs.branch_name }}' --base main --json number --jq 'length' | grep -q '^[1-9]'; then
+            gh pr create \
+              --title '${{ inputs.branch_name }}' \
+              --body '${{ inputs.branch_name }}' \
+              --head '${{ inputs.branch_name }}' \
+              --base main \
+              --label 'don''t squash'
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
