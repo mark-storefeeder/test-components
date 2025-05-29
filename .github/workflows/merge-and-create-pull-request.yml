@@ -92,7 +92,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: '${{ inputs.branch_name }}',
-                description: '${{ inputs.branch_name }}',
+                description: ${{ inputs.branch_name }},
                 head: '${{ inputs.branch_name }}',
                 base: 'main'
               })
