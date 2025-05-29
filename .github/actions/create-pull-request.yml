@@ -11,6 +11,13 @@ jobs:
   create-pull-request:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create pull request
         uses: actions/github-script@v7
         with:
