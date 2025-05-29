@@ -5,16 +5,14 @@ on:
     types: [labeled, opened, reopened, synchronize]
 
 jobs:
-  merge-to-dev-release-branch:
+  merge-pull-request:
     if: contains(github.event.pull_request.labels.*.name, 'ready for dev testing')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Merge pull request
-        uses: ./.github/workflows/merge-pull-request.yml
-        with:
-          branch_name: 'release/dev'
+    uses: ./.github/workflows/merge-pull-request.yml
+    with:
+      branch_name: 'release/dev'
 
-      - name: Create pull request
-        uses: ./.github/workflows/create-pull-request.yml
-        with:
-          branch_name: 'release/dev'
+  create-pull-request:
+    needs: merge-pull-request
+    uses: ./.github/workflows/create-pull-request.yml
+    with:
+      branch_name: 'release/dev'
