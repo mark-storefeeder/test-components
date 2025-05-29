@@ -1,4 +1,4 @@
-name: Merge pull request
+name: Merge and create pull request
 
 on:
   workflow_call:
@@ -8,7 +8,7 @@ on:
         type: string
 
 jobs:
-  merge-pull-request:
+  merge-and-create-pull-request:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -17,6 +17,13 @@ jobs:
           fetch-depth: 0
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check whether branch name matches target
+        run: |
+          if [ "${{ github.ref_name }}" = "${{ inputs.branch_name }}" ]; then
+            echo "The pull request cannot be merged because the branch name matches the target branch name (${{ inputs.branch_name }})"
+            exit 1
+          fi
 
       - name: Check whether branch exists
         id: check-branch
@@ -38,14 +45,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge pull request
+      - name: Change base branch
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const mergeMethod = context.payload.pull_request.labels.some(label => label.name === 'don\'t squash') ? 'rebase' : 'squash';
-            
-            // Update the pull request's base branch
             await github.rest.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -53,20 +57,12 @@ jobs:
               base: '${{ inputs.branch_name }}'
             });
 
-            // Wait a moment for GitHub to update the mergeable state
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Get the PR details to check mergeable state
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number
-            });
-
-            if (pr.data.mergeable_state === 'conflicting') {
-              core.setFailed('The pull request cannot be merged due to conflicts with the ${{ inputs.branch_name }} branch');
-              return;
-            }
+      - name: Merge pull request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const mergeMethod = context.payload.pull_request.labels.some(label => label.name === 'don\'t squash') ? 'rebase' : 'squash';
 
             await github.rest.pulls.merge({
               owner: context.repo.owner,
@@ -76,3 +72,36 @@ jobs:
               author_name: context.payload.pull_request.user.login,
               author_email: context.payload.pull_request.user.email || `${context.payload.pull_request.user.login}@users.noreply.github.com`
             });
+
+      - name: Create pull request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Check if a pull request already exists
+            const existingPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: '${{ inputs.branch_name }}',
+              base: 'main',
+              state: 'open'
+            });
+
+            if (existingPRs.data.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '${{ inputs.branch_name }}',
+                head: '${{ inputs.branch_name }}',
+                base: 'main'
+              })
+              .then(async (response) => {
+                // Add 'don't squash' label to the pull request
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: response.data.number,
+                  labels: ['don\'t squash']
+                });
+              });
+            }
