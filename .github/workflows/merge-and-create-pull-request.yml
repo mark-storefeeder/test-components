@@ -21,14 +21,14 @@ jobs:
       - name: Check whether branch name matches target
         run: |
           if [ "${{ github.head_ref }}" = "${{ inputs.branch_name }}" ]; then
-            echo "The pull request cannot be merged because the branch name matches the target branch name (${{ inputs.branch_name }})"
+            echo 'This pull request cannot be merged because the branch name matches the target branch name (${{ inputs.branch_name }})'
             exit 1
           fi
 
       - name: Check whether branch exists
         id: check-branch
         run: |
-          if git ls-remote --heads origin ${{ inputs.branch_name }} | grep -q "${{ inputs.branch_name }}"; then
+          if git ls-remote --heads origin ${{ inputs.branch_name }} | grep -q '${{ inputs.branch_name }}'; then
             echo "branch_exists=true" >> $GITHUB_OUTPUT
           else
             echo "branch_exists=false" >> $GITHUB_OUTPUT
