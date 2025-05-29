@@ -81,7 +81,7 @@ jobs:
               --title '${{ inputs.branch_name }}' \
               --body '${{ inputs.branch_name }}' \
               --head '${{ inputs.branch_name }}' \
-              --base main \
+              --base main
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
