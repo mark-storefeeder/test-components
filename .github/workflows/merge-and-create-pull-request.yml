@@ -63,8 +63,7 @@ jobs:
 
             if (pr.data.mergeable_state === 'conflicting') {
               core.setFailed('The pull request cannot be merged due to conflicts with the ${{ inputs.branch_name }} branch');
-              // TODO: Add a label to the pull request
-              return;
+              process.exit(1);
             }
       
       - name: Create branch
