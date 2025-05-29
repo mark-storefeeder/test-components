@@ -7,12 +7,6 @@ on:
 jobs:
   merge-pull-request:
     if: contains(github.event.pull_request.labels.*.name, 'ready for dev testing')
-    uses: ./.github/workflows/merge-pull-request.yml
-    with:
-      branch_name: 'release/dev'
-
-  create-pull-request:
-    needs: merge-pull-request
-    uses: ./.github/workflows/create-pull-request.yml
+    uses: ./.github/workflows/merge-and-create-pull-request.yml
     with:
       branch_name: 'release/dev'
