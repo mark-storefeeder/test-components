@@ -5,8 +5,12 @@ on:
     types: [labeled, opened, reopened, synchronize]
 
 jobs:
-  merge-pull-request:
+  check-for-label:
     if: contains(github.event.pull_request.labels.*.name, 'ready for dev testing')
+    runs-on: ubuntu-latest
+
+  merge-pull-request:
+    needs: check-for-label
     uses: ./.github/workflows/merge-pull-request.yml
     with:
       branch_name: 'release/dev'
