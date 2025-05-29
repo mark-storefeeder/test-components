@@ -5,107 +5,13 @@ on:
     types: [labeled, opened, reopened, synchronize]
 
 jobs:
-  merge-to-dev-release-branch:
+  merge-to-release-branch:
     if: contains(github.event.pull_request.labels.*.name, 'ready for dev testing')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+    uses: ./.github/workflows/merge-pull-request.yml
+    with:
+      branch_name: 'release/dev'
 
-      - name: Check if release/dev branch exists
-        id: check-branch
-        run: |
-          if git ls-remote --heads origin release/dev | grep -q "release/dev"; then
-            echo "branch_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "branch_exists=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create release/dev branch
-        if: steps.check-branch.outputs.branch_exists == 'false'
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'github-actions@github.com'
-          git checkout -b release/dev
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          git push origin release/dev
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge PR to release/dev branch
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const mergeMethod = context.payload.pull_request.labels.some(label => label.name === 'don\'t squash') ? 'rebase' : 'squash';
-            
-            // Update the PR's base branch to release/dev
-            await github.rest.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              base: 'release/dev'
-            });
-
-            // Wait a moment for GitHub to update the mergeable state
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Get the PR details to check mergeable state
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number
-            });
-
-            if (pr.data.mergeable_state === 'conflicting') {
-              core.setFailed('Cannot merge PR: Conflicts detected with release/dev branch');
-              return;
-            }
-
-            await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              merge_method: mergeMethod,
-              author_name: context.payload.pull_request.user.login,
-              author_email: context.payload.pull_request.user.email || `${context.payload.pull_request.user.login}@users.noreply.github.com`
-            });
-
-
-      - name: Create PR for release/dev branch
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Check if a PR already exists
-            const existingPRs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: 'release/dev',
-              base: 'main',
-              state: 'open'
-            });
-
-            if (existingPRs.data.length === 0) {
-              await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: 'release/dev',
-                head: 'release/dev',
-                base: 'main'
-              })
-              .then(async (response) => {
-                // Add 'don't squash' label to the PR
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: response.data.number,
-                  labels: ['don\'t squash']
-                });
-              });
-            }
-    
+  create-pull-request:
+    uses: ./.github/workflows/create-pull-request.yml
+    with:
+      branch_name: 'release/dev'
