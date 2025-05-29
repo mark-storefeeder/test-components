@@ -11,6 +11,13 @@ jobs:
   merge-pull-request:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check whether branch exists
         id: check-branch
         run: |
