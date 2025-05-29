@@ -5,7 +5,7 @@ on:
     types: [labeled, opened, reopened, synchronize]
 
 jobs:
-  merge-pull-request:
+  merge-and-create-pull-request:
     if: contains(github.event.pull_request.labels.*.name, 'ready for dev testing')
     uses: ./.github/workflows/merge-and-create-pull-request.yml
     with:
