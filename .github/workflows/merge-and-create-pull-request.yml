@@ -48,7 +48,7 @@ jobs:
             });
 
             // Wait a moment for GitHub to update the mergeable state
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
 
       - name: Check for conflicts
         uses: actions/github-script@v7
