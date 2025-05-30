@@ -27,10 +27,11 @@ jobs:
 
       - name: Create branch
         run: |
+          # Crate a branch if it doesn't already exist. '--jq .name' gets the branch name from the JSON response, and '2>/dev/null' suppresses errors if the branch doesn't exist:
           if ! gh api repos/${{ github.repository }}/branches/${{ inputs.branch_name }} --jq .name 2>/dev/null; then
-            # Get the SHA of the main branch
+            # Get the SHA of the main branch:
             sha=$(gh api repos/${{ github.repository }}/git/refs/heads/main --jq .object.sha)
-            # Create the new branch
+            # Create the new branch:
             gh api repos/${{ github.repository }}/git/refs -f ref=refs/heads/${{ inputs.branch_name }} -f sha=$sha
           fi
         env:
