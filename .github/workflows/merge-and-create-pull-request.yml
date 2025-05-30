@@ -3,7 +3,7 @@ name: Merge and create pull request
 on:
   workflow_call:
     inputs:
-      branch_name:
+      target_branch_name:
         required: true
         type: string
 
@@ -18,27 +18,39 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check whether branch name matches target
+      - name: Check whether source branch name matches target branch name
         run: |
-          if [ '${{ github.head_ref }}' = '${{ inputs.branch_name }}' ]; then
-            echo 'This pull request cannot be merged because the branch name matches the target branch name (${{ inputs.branch_name }})'
+          if [ '${{ github.head_ref }}' = '${{ inputs.target_branch_name }}' ]; then
+            echo 'This pull request cannot be merged because the branch name matches the target branch name (${{ inputs.target_branch_name }}).'
             exit 1
           fi
 
-      - name: Create branch
+      - name: Create target branch
         run: |
-          # Crate a branch if it doesn't already exist. '--jq .name' gets the branch name from the JSON response, and '2>/dev/null' suppresses errors if the branch doesn't exist:
-          if ! gh api repos/${{ github.repository }}/branches/${{ inputs.branch_name }} --jq .name 2>/dev/null; then
-            # Get the SHA of the main branch:
-            sha=$(gh api repos/${{ github.repository }}/git/refs/heads/main --jq .object.sha)
+          # Create the target branch if it doesn't already exist. '--jq .name' gets the branch name from the JSON response, and '2>/dev/null' suppresses errors if the branch doesn't exist:
+          if ! gh api repos/${{ github.repository }}/branches/${{ inputs.target_branch_name }} --jq .name 2>/dev/null; then
+            # Get the commit SHA of main:
+            main_sha=$(gh api repos/${{ github.repository }}/git/refs/heads/main --jq .object.sha)
             # Create the new branch:
-            gh api repos/${{ github.repository }}/git/refs -f ref=refs/heads/${{ inputs.branch_name }} -f sha=$sha
+            gh api repos/${{ github.repository }}/git/refs -f ref=refs/heads/${{ inputs.target_branch_name }} -f sha=$main_sha
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check whether target branch is stale
+        run: |
+          # Get the commit SHA of main:
+          main_sha=$(gh api repos/${{ github.repository }}/git/refs/heads/main --jq .object.sha)
+          # Get the commit SHA of the target branch:
+          target_sha=$(gh api repos/${{ github.repository }}/git/refs/heads/${{ inputs.target_branch_name }} --jq .object.sha)
+          # Check if target branch is behind main:
+          if ! gh api repos/${{ github.repository }}/compare/$target_sha...$main_sha --jq .behind_by | grep -q '^0$'; then
+            echo 'This pull request hasn't been merged because the target branch '${{ inputs.target_branch_name }}' is behind main, so might be stale.'
+            exit 1
+          fi
+
       - name: Change base branch
-        run: gh pr edit ${{ github.event.pull_request.number }} --base ${{ inputs.branch_name }}
+        run: gh pr edit ${{ github.event.pull_request.number }} --base ${{ inputs.target_branch_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -55,11 +67,11 @@ jobs:
       - name: Create new pull request
         run: |
           # Check if a pull request already exists
-          if ! gh pr list --head '${{ inputs.branch_name }}' --base main --json number --jq 'length' | grep -q '^[1-9]'; then
+          if ! gh pr list --head '${{ inputs.target_branch_name }}' --base main --json number --jq 'length' | grep -q '^[1-9]'; then
             gh pr create \
-              --title '${{ inputs.branch_name }}' \
-              --body '${{ inputs.branch_name }}' \
-              --head '${{ inputs.branch_name }}' \
+              --title '${{ inputs.target_branch_name }}' \
+              --body '${{ inputs.target_branch_name }}' \
+              --head '${{ inputs.target_branch_name }}' \
               --base main \
               --label "don't squash"
           fi

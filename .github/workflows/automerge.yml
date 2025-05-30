@@ -10,18 +10,18 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'automerge:release/dev') && github.event.pull_request.state != 'closed'
     uses: ./.github/workflows/merge-and-create-pull-request.yml
     with:
-      branch_name: 'release/dev'
+      target_branch_name: 'release/dev'
 
   merge-to-release-uat:
     if: |
       contains(github.event.pull_request.labels.*.name, 'automerge:release/uat') && github.event.pull_request.state != 'closed'
     uses: ./.github/workflows/merge-and-create-pull-request.yml
     with:
-      branch_name: 'release/uat'
+      target_branch_name: 'release/uat'
 
   merge-to-main:
     if: |
       contains(github.event.pull_request.labels.*.name, 'automerge:main') && github.event.pull_request.state != 'closed'
     uses: ./.github/workflows/merge.yml
     with:
-      branch_name: 'main'
+      target_branch_name: 'main'

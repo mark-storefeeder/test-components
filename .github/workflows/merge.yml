@@ -3,7 +3,7 @@ name: Merge
 on:
   workflow_call:
     inputs:
-      branch_name:
+      target_branch_name:
         required: true
         type: string
 
@@ -18,11 +18,11 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check whether base branch matches target
+      - name: Check whether base branch name matches target branch name
         run: |
-          base_branch=$(gh pr view ${{ github.event.pull_request.number }} --json baseRefName --jq .baseRefName)
-          if [ "$base_branch" != "${{ inputs.branch_name }}" ]; then
-            echo 'This pull request cannot be merged because the base branch ($base_branch) does not match the target branch (${{ inputs.branch_name }})'
+          base_branch_name=$(gh pr view ${{ github.event.pull_request.number }} --json baseRefName --jq .baseRefName)
+          if [ "$base_branch_name" != "${{ inputs.target_branch_name }}" ]; then
+            echo 'This pull request cannot be merged because the base branch ($base_branch_name) does not match the target branch (${{ inputs.target_branch_name }}).'
             exit 1
           fi
 
