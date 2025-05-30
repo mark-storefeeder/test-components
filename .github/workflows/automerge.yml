@@ -1,0 +1,27 @@
+name: Automerge
+
+on:
+  pull_request:
+    types: [labeled, synchronize]
+
+jobs:
+  merge-to-release-dev:
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'automerge:release/dev') && github.event.pull_request.state != 'closed'
+    uses: ./.github/workflows/merge-and-create-pull-request.yml
+    with:
+      branch_name: 'release/dev'
+
+  merge-to-release-uat:
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'automerge:release/uat') && github.event.pull_request.state != 'closed'
+    uses: ./.github/workflows/merge-and-create-pull-request.yml
+    with:
+      branch_name: 'release/uat'
+
+  merge-to-main:
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'automerge:main') && github.event.pull_request.state != 'closed'
+    uses: ./.github/workflows/merge.yml
+    with:
+      branch_name: 'main'
