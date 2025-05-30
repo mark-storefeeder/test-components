@@ -7,6 +7,16 @@ on:
         required: true
         type: string
 
+  workflow_dispatch:
+    inputs:
+      target_branch_name:
+        description: 'Target branch to merge into'
+        required: true
+        type: choice
+        options:
+          - release/dev
+          - release/uat
+
 jobs:
   merge-and-create-pull-request:
     runs-on: ubuntu-latest
