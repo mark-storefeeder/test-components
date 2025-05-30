@@ -2,7 +2,7 @@ name: Merge to DEV release branch
 
 on:
   pull_request:
-    types: [labeled, opened, reopened, synchronize]
+    types: [labeled, synchronize]
 
 jobs:
   merge-and-create-pull-request:
